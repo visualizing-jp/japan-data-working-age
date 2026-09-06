@@ -4,24 +4,12 @@
 
 import { CubeView, type CubeJson, type DictEntry } from "./cube.ts";
 
-export interface EraData {
-  metrics: DictEntry[];
+export type Sex = "total" | "male" | "female";
+
+export interface RatesData {
+  ages: DictEntry[];
   cube: CubeView;
   years: number[];
-}
-
-export interface FormData {
-  formDims: DictEntry[];
-  codes: DictEntry[];
-  cube: CubeView;
-  years: string[];
-}
-
-export interface GeoData {
-  metrics: DictEntry[];
-  areas: DictEntry[];
-  cube: CubeView;
-  years: string[];
 }
 
 const cache = new Map<string, Promise<unknown>>();
@@ -39,34 +27,10 @@ function chunk<Raw, T>(name: string, transform: (raw: Raw) => T): Promise<T> {
   return promise;
 }
 
-export function loadEra(): Promise<EraData> {
-  return chunk<CubeJson & { metrics: DictEntry[] }, EraData>("era", (raw) => ({
-    metrics: raw.metrics,
+export function loadRates(): Promise<RatesData> {
+  return chunk<CubeJson & { ages: DictEntry[] }, RatesData>("rates", (raw) => ({
+    ages: raw.ages,
     cube: new CubeView(raw),
     years: raw.dims.find((d) => d.name === "year")!.codes.map(Number),
   }));
-}
-
-export function loadForm(): Promise<FormData> {
-  return chunk<CubeJson & { formDims: DictEntry[]; codes: DictEntry[] }, FormData>(
-    "form",
-    (raw) => ({
-      formDims: raw.formDims,
-      codes: raw.codes,
-      cube: new CubeView(raw),
-      years: [...raw.dims.find((d) => d.name === "year")!.codes].reverse(),
-    }),
-  );
-}
-
-export function loadGeo(): Promise<GeoData> {
-  return chunk<CubeJson & { metrics: DictEntry[]; areas: DictEntry[] }, GeoData>(
-    "geo",
-    (raw) => ({
-      metrics: raw.metrics,
-      areas: raw.areas,
-      cube: new CubeView(raw),
-      years: [...raw.dims.find((d) => d.name === "year")!.codes].reverse(),
-    }),
-  );
 }

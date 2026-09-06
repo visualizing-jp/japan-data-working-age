@@ -1,16 +1,20 @@
+import { Suspense } from "react";
+import { EraView } from "./views/EraView.tsx";
+import { AgeView } from "./views/AgeView.tsx";
+import { SexView } from "./views/SexView.tsx";
 import { useUrlState } from "./hooks/useUrlState.ts";
 
 const VIEWS = [
-  { id: "era", label: "時代", hint: "", ready: false },
-  { id: "age", label: "年齢", hint: "", ready: false },
-  { id: "geo", label: "地域", hint: "", ready: false },
+  { id: "era", label: "時代", hint: "1953–2025", ready: true },
+  { id: "age", label: "年齢", hint: "プロファイル", ready: true },
+  { id: "sex", label: "性", hint: "男女比較", ready: true },
 ] as const;
 
 type ViewId = (typeof VIEWS)[number]["id"];
 
 export function App() {
   const [view, setView] = useUrlState<ViewId>("view", "era", (v) =>
-    VIEWS.some((x) => x.id === v),
+    VIEWS.some((x) => x.id === v && x.ready),
   );
 
   return (
@@ -21,9 +25,7 @@ export function App() {
             <h1 className="text-[15px] font-semibold tracking-tight">
               日本人は何歳まで働くようになったか
             </h1>
-            <p className="text-[11px] text-muted">
-              労働力調査
-            </p>
+            <p className="text-[11px] text-muted">総務省「労働力調査」</p>
           </div>
           <nav className="flex gap-1 -mb-px" aria-label="ビュー">
             {VIEWS.map((v) => (
@@ -49,15 +51,16 @@ export function App() {
         </div>
       </header>
 
-<main className="mx-auto w-full max-w-[1240px] px-6 py-16">
-  <p className="text-[13px] text-muted">このテーマは準備中です。</p>
-  <p className="mt-2 text-[12px] text-faint">
-    主な統計: 労働力調査 ／ 可視化の核: 年齢別就業率。「高齢化」を労働側から見る
-  </p>
-</main>
+      <Suspense key={view} fallback={<Loading />}>
+        {view === "era" && <EraView />}
+        {view === "age" && <AgeView />}
+        {view === "sex" && <SexView />}
+      </Suspense>
 
       <footer className="mx-auto w-full max-w-[1240px] px-6 pt-2 pb-10 text-[11px] leading-relaxed text-faint">
-        出典: 労働力調査（詳細は docs/data-sources.md。表IDは調査後に確定）。
+        出典: 総務省「労働力調査」基本集計（年平均・全国、e-Stat）。
+        就業率は1968年〜、労働力人口比率・完全失業率は1953年〜。
+        働き方の形態（正規・非正規・自営）は姉妹編「どんな働き方をしてきたか」を参照。
         <a
           href="https://visualizing.jp/"
           className="mt-2 block w-fit transition-colors duration-150 hover:text-muted"
@@ -65,6 +68,14 @@ export function App() {
           visualizing.jp
         </a>
       </footer>
+    </div>
+  );
+}
+
+function Loading() {
+  return (
+    <div className="mx-auto w-full max-w-[1240px] px-6 py-16 text-[12px] text-faint">
+      読み込み中
     </div>
   );
 }

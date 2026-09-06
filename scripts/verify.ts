@@ -17,84 +17,66 @@ function ok(label: string, cond: boolean, detail = ""): void {
   if (!cond) failed += 1;
 }
 
-function near(a: number, b: number, tol: number): boolean {
-  return Math.abs(a - b) <= tol;
+interface RatesFile extends CubeJson {
+  ages: DictEntry[];
 }
 
-interface EraFile extends CubeJson {
-  metrics: DictEntry[];
-}
+const ratesRaw = JSON.parse(await readFile(resolve(DATA, "rates.json"), "utf8")) as RatesFile;
+const rates = new CubeView(ratesRaw);
 
-interface FormFile extends CubeJson {
-  formDims: DictEntry[];
-  codes: DictEntry[];
-}
+ok("年齢帯が16", ratesRaw.ages.length === 16, String(ratesRaw.ages.length));
 
-interface GeoFile extends CubeJson {
-  metrics: DictEntry[];
-  areas: DictEntry[];
-}
-
-const eraRaw = JSON.parse(await readFile(resolve(DATA, "era.json"), "utf8")) as EraFile;
-const formRaw = JSON.parse(await readFile(resolve(DATA, "form.json"), "utf8")) as FormFile;
-const geoRaw = JSON.parse(await readFile(resolve(DATA, "geo.json"), "utf8")) as GeoFile;
-
-const era = new CubeView(eraRaw);
-const form = new CubeView(formRaw);
-const geo = new CubeView(geoRaw);
-
-const total2023 = era.at("dwellings", { metric: "total", year: "2023" });
+const emp2024 = rates.at("empRate", { age: "00", sex: "total", year: "2024" });
 ok(
-  "era 2023 総住宅数が妥当",
-  total2023 !== null && total2023 > 60_000_000 && total2023 < 70_000_000,
-  String(total2023),
+  "2024 15歳以上就業率が妥当",
+  emp2024 !== null && emp2024 > 0.55 && emp2024 < 0.7,
+  String(emp2024),
 );
 
-const vacantRate2023 = era.at("rate", { metric: "vacant", year: "2023" });
+const emp1968 = rates.at("empRate", { age: "00", sex: "total", year: "1968" });
 ok(
-  "era 2023 空き家率≈13.8%",
-  vacantRate2023 !== null && near(vacantRate2023, 0.138, 0.005),
-  String(vacantRate2023),
+  "1968 就業率がある（公表は1968年～）",
+  emp1968 !== null && emp1968 > 0.5,
+  String(emp1968),
 );
 
-const ownedRate2023 = era.at("rate", { metric: "owned", year: "2023" });
+const emp1967 = rates.at("empRate", { age: "00", sex: "total", year: "1967" });
+ok("1967 就業率は欠測", emp1967 === null, String(emp1967));
+
+const lfpr1953 = rates.at("lfpr", { age: "00", sex: "total", year: "1953" });
 ok(
-  "era 2023 持ち家比率≈60.9%",
-  ownedRate2023 !== null && near(ownedRate2023, 0.609, 0.01),
-  String(ownedRate2023),
+  "1953 労働力人口比率がある",
+  lfpr1953 !== null && lfpr1953 > 0.5,
+  String(lfpr1953),
 );
 
-const vacant1978 = era.at("rate", { metric: "vacant", year: "1978" });
+const elderly2000 = rates.at("empRate", { age: "18", sex: "total", year: "2000" });
+const elderly2024 = rates.at("empRate", { age: "18", sex: "total", year: "2024" });
 ok(
-  "era 空き家率が上昇 (1978→2023)",
-  vacant1978 !== null && vacantRate2023 !== null && vacantRate2023 > vacant1978,
-  `${vacant1978} → ${vacantRate2023}`,
+  "65歳以上就業率が上昇 (2000→2024)",
+  elderly2000 !== null && elderly2024 !== null && elderly2024 > elderly2000,
+  `${elderly2000} → ${elderly2024}`,
 );
 
-const tenureSum = ["owned", "rented_public", "rented_private", "rented_issued"].reduce(
-  (n, code) => n + (form.at("share", { dim: "tenure", code, year: "2023" }) ?? 0),
-  0,
-);
-ok("form 2023 所有 share 合計≈1", near(tenureSum, 1, 0.05), String(tenureSum));
+const elderlyOk =
+  elderly2024 !== null && elderly2024 > 0.15 && elderly2024 < 0.45;
+ok("2024 65歳以上就業率が妥当", elderlyOk, String(elderly2024));
 
-const vacantShareSum = ["secondary", "for_rent", "for_sale", "other_vacant"].reduce(
-  (n, code) => n + (form.at("share", { dim: "vacancy", code, year: "2023" }) ?? 0),
-  0,
-);
-ok("form 2023 空き家種類 share 合計≈1", near(vacantShareSum, 1, 0.05), String(vacantShareSum));
-
-ok("geo 都道府県が47+全国", geoRaw.areas.length === 48, String(geoRaw.areas.length));
-
-const tokyoVacant = geo.at("value", { metric: "vacant", year: "2023", area: "13000" });
-const nationalVacant = geo.at("value", { metric: "vacant", year: "2023", area: "00000" });
+const femaleEmp = rates.at("empRate", { age: "00", sex: "female", year: "2024" });
+const maleEmp = rates.at("empRate", { age: "00", sex: "male", year: "2024" });
 ok(
-  "geo 東京の空き家率が全国と異なる",
-  tokyoVacant !== null && nationalVacant !== null && tokyoVacant !== nationalVacant,
-  `東京 ${tokyoVacant} / 全国 ${nationalVacant}`,
+  "女性就業率が男性より低い (15歳以上)",
+  femaleEmp !== null && maleEmp !== null && femaleEmp < maleEmp,
+  `女 ${femaleEmp} / 男 ${maleEmp}`,
 );
 
-const relNat = geo.at("relative", { metric: "vacant", year: "2023", area: "00000" });
-ok("geo 全国 relative=1", relNat === 1, String(relNat));
+const age6064 = rates.at("empRate", { age: "17", sex: "total", year: "2024" });
+const age6569 = rates.at("empRate", { age: "19", sex: "total", year: "2024" });
+ok(
+  "60–64 就業率が 65–69 より高い",
+  age6064 !== null && age6569 !== null && age6064 > age6569,
+  `60–64 ${age6064} / 65–69 ${age6569}`,
+);
 
 if (failed > 0) {
   console.error(`\n${failed} checks failed`);

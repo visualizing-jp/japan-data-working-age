@@ -1,17 +1,14 @@
 /**
- * 指標・形態カテゴリのヘルパ。
+ * 年齢階級のヘルパ。
  */
 
 import type { DictEntry } from "./cube.ts";
+import { SUMMARY_AGE_CODES } from "../../lib/data/labels.ts";
 
-export function listMetrics(items: DictEntry[]): DictEntry[] {
+export function listAges(items: DictEntry[]): DictEntry[] {
   return items;
 }
 
-export function codesForDim(items: DictEntry[], dim: string): DictEntry[] {
-  return items.filter((d) => d.parent === dim);
-}
-
-export function geoMetrics(items: DictEntry[]): DictEntry[] {
-  return items;
+export function isSummaryAge(code: string): boolean {
+  return SUMMARY_AGE_CODES.has(code);
 }
