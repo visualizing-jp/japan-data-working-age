@@ -3,6 +3,7 @@ import { EraView } from "./views/EraView.tsx";
 import { AgeView } from "./views/AgeView.tsx";
 import { SexView } from "./views/SexView.tsx";
 import { useUrlState } from "./hooks/useUrlState.ts";
+import { SeriesBar, SeriesFooter } from "./components/Brand.tsx";
 
 const VIEWS = [
   { id: "era", label: "時代", hint: "1953–2025", ready: true },
@@ -20,6 +21,7 @@ export function App() {
   return (
     <div className="min-h-dvh">
       <header className="border-b border-rule bg-paper/85 backdrop-blur-sm">
+        <SeriesBar />
         <div className="mx-auto flex w-full max-w-[1240px] flex-wrap items-end justify-between gap-4 px-6 pt-5">
           <div>
             <h1 className="text-[15px] font-semibold tracking-tight">
@@ -61,12 +63,7 @@ export function App() {
         出典: 総務省「労働力調査」基本集計（年平均・全国、e-Stat）。
         就業率は1968年〜、労働力人口比率・完全失業率は1953年〜。
         働き方の形態（正規・非正規・自営）は姉妹編「どんな働き方をしてきたか」を参照。
-        <a
-          href="https://visualizing.jp/"
-          className="mt-2 block w-fit transition-colors duration-150 hover:text-muted"
-        >
-          visualizing.jp
-        </a>
+        <SeriesFooter />
       </footer>
     </div>
   );
